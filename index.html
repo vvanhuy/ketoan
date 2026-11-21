@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17624f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kết toán">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Kết toán tủ nước · 飲料櫃結算</title>
+<style>
+:root{
+  --bg:#f3f2ee;--surface:#fff;--ink:#17201d;--ink2:#4a524e;--mute:#8a908c;--line:#e6e4de;--line2:#f0eeea;
+  --acc:#17624f;--acc-ink:#fff;--acc-soft:#e6f1ed;--acc-line:#bcd9cf;
+  --warn:#9a6a00;--warn-soft:#fff6e0;--warn-line:#efd48f;
+  --bad:#b3261e;--bad-soft:#fdecea;
+  --soft:#fafaf8;--field:#fff;--fixed:#f7f6f3;--track:#e7e5df;--knob:#fff;--off:#d4d2cb;
+  --hdr:rgba(243,242,238,.92);--barbg:rgba(255,255,255,.95);
+  --r:14px;--r-sm:10px;
+  --shadow:0 1px 2px rgba(20,30,25,.05),0 2px 8px rgba(20,30,25,.04);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1412;--surface:#171d1a;--ink:#eef2ef;--ink2:#b7c0bb;--mute:#7f8a84;--line:#28302c;--line2:#202724;
+  --acc:#3fae8c;--acc-ink:#06130e;--acc-soft:#173229;--acc-line:#245244;
+  --warn:#e2b54a;--warn-soft:#2f2711;--warn-line:#5c4a1c;--bad:#ff8a80;--bad-soft:#3a1d1b;
+  --soft:#1b221f;--field:#111614;--fixed:#1d2421;--track:#232b27;--knob:#eef2ef;--off:#3a433e;
+  --hdr:rgba(15,20,18,.9);--barbg:rgba(23,29,26,.95);
+  --shadow:none;color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang TC","Noto Sans TC",sans-serif;font-size:16px;line-height:1.35}
+button{font:inherit;color:inherit;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+.hide{display:none!important}
+
+/* header */
+header{position:sticky;top:0;z-index:10;background:var(--hdr);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.hd{max-width:640px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px 10px}
+.hd-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.hd h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
+.sync{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--mute)}
+.sync.ok i{background:#2e9b6e}
+.lang{border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--track);border-radius:11px;padding:3px}
+.seg button{border:0;background:none;padding:8px 0;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink2)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+main{max-width:640px;margin:0 auto;padding:14px 12px 130px}
+.hint{font-size:13px;color:var(--mute);margin:2px 4px 12px;display:flex;gap:14px;flex-wrap:wrap}
+.hint span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* group */
+.grp{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;border:1px solid var(--line)}
+.grp-hd{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--soft);border-bottom:1px solid var(--line2)}
+.grp-hd b{font-size:15px}
+.grp-hd .gs{font-size:12px;color:var(--mute);font-weight:500;margin-left:6px}
+.grp-hd .gs.ok{color:var(--acc)}
+.grp.done{border-color:var(--acc-line)}
+.grp-hd span{font-size:12px;color:var(--mute)}
+.mini{display:inline-grid;grid-template-columns:1fr 1fr;background:var(--track);border-radius:8px;padding:2px}
+.mini button{border:0;background:none;font-size:12px;font-weight:600;padding:5px 9px;border-radius:6px;color:var(--ink2)}
+.mini button.on{background:var(--surface);color:var(--acc);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.cols{display:grid;grid-template-columns:1fr 72px 136px;gap:8px;padding:10px 26px 0;max-width:640px;margin:0 auto;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.cols div:nth-child(n+2){text-align:center}
+.it{display:grid;grid-template-columns:1fr 72px 136px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line2);position:relative}
+.it:last-child{border-bottom:0}
+.it::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:transparent}
+.it.done::before{background:var(--acc)}
+.it.err::before{background:var(--bad)}
+.it-nm{min-width:0}
+.it-nm b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it-nm small{font-size:12px;color:var(--mute)}
+.it-nm small.err{color:var(--bad)}
+.it-nm small.np{color:var(--warn)}
+input.n{width:100%;height:42px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--field);text-align:center;font-size:18px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;padding:0 4px;-moz-appearance:textfield;appearance:textfield}
+input.n::-webkit-outer-spin-button,input.n::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input.n:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+input.n.fixed{background:var(--fixed);color:var(--ink2);font-weight:500}
+input.n.fixed::placeholder{color:var(--ink2)}
+input.n.need{background:var(--warn-soft);border-color:var(--warn-line)}
+.stp{display:grid;grid-template-columns:38px 1fr 38px;gap:4px}
+.stp button{height:42px;border:0;border-radius:var(--r-sm);background:var(--acc-soft);color:var(--acc);font-size:22px;font-weight:500;line-height:1}
+.stp button:active{background:var(--acc-line)}
+
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--barbg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
+.bar-in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.prog{flex:1;min-width:0}
+.prog-t{font-size:13px;color:var(--ink2);margin-bottom:6px}
+.prog-t b{color:var(--ink)}
+.prog-b{height:6px;background:var(--line2);border-radius:3px;overflow:hidden}
+.prog-b i{display:block;height:100%;background:var(--acc);border-radius:3px;transition:width .2s}
+
+.btn{border:0;border-radius:12px;background:var(--acc);color:var(--acc-ink);font-size:16px;font-weight:650;padding:14px 22px}
+.btn:active{filter:brightness(.92)}
+.btn.block{display:block;width:100%}
+.btn.soft{background:var(--acc-soft);color:var(--acc)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:8px 12px;font-size:14px;border-radius:9px}
+.btns{display:grid;gap:8px;margin-top:14px}
+.btns2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* result */
+.hero{background:var(--acc);color:var(--acc-ink);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
+.hero small{opacity:.8;font-size:13px}
+.hero .big{font-size:34px;font-weight:750;letter-spacing:-.02em;margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.card-hd{padding:12px 14px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center}
+.card-hd b{font-size:15px}
+.card-hd span{font-size:12px;color:var(--mute)}
+.ln{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line2)}
+.ln:last-child{border-bottom:0}
+.ln .l b{font-weight:600}
+.ln .l small{display:block;font-size:12px;color:var(--mute)}
+.ln .r{font-size:20px;font-weight:700}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:12px 14px}
+.chip{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--soft)}
+.chip small{display:block;font-size:12px;color:var(--mute);margin-bottom:2px}
+.chip b{font-size:22px;font-weight:700}
+.detail{width:100%;border-collapse:collapse;font-size:14px}
+.detail td,.detail th{padding:8px 14px;border-top:1px solid var(--line2);text-align:right}
+.detail td:first-child,.detail th:first-child{text-align:left}
+.detail th{font-size:11px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+details.more summary{list-style:none;padding:10px 14px;font-size:13px;color:var(--acc);font-weight:600;border-top:1px solid var(--line2);cursor:pointer}
+details.more summary::-webkit-details-marker{display:none}
+
+/* items */
+.add{padding:14px;display:grid;gap:8px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mute)}
+.fld input{height:42px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;font-size:16px;color:var(--ink);background:var(--field);width:100%}
+.fld input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mi{border-bottom:1px solid var(--line2)}
+.mi:last-child{border-bottom:0}
+.mi-row{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.mi-row .t{flex:1;min-width:0}
+.mi-row .t b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-row .t small{font-size:12px;color:var(--mute)}
+.mi-row.off .t{opacity:.45}
+.edit-btn{border:0;background:none;color:var(--acc);font-size:14px;font-weight:600;padding:6px}
+.mi-ed{padding:0 14px 14px;display:grid;gap:8px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--acc-soft);color:var(--acc);margin-left:4px;vertical-align:1px}
+.tag.v{background:var(--warn-soft);color:var(--warn)}
+.toggle{position:relative;width:46px;height:28px;flex:none}
+.toggle input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:1}
+.toggle i{position:absolute;inset:0;background:var(--off);border-radius:14px;transition:.15s}
+.toggle i:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:var(--knob);border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.15s}
+.toggle input:checked+i{background:var(--acc)}
+.toggle input:checked+i:before{transform:translateX(18px)}
+.del{border:0;background:none;color:var(--bad);font-size:14px;font-weight:600;padding:8px 0;text-align:left}
+.empty{padding:28px 16px;text-align:center;color:var(--mute);font-size:14px}
+
+/* sheet / modal */
+.modal{position:fixed;inset:0;background:rgba(15,20,18,.4);display:none;align-items:flex-end;justify-content:center;z-index:30}
+.modal.show{display:flex}
+.sheet{background:var(--surface);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet h4{margin:0 0 6px;font-size:17px}
+.sheet p{margin:0 0 14px;color:var(--ink2);font-size:14px}
+.sheet textarea{background:var(--field);color:var(--ink);width:100%;height:170px;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;z-index:40;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="hd-top"><h1 data-t="title"></h1>
+    <div style="display:flex;align-items:center;gap:10px"><span class="sync" id="sync"><i></i><span></span></span><button class="lang" id="langBtn"></button></div>
+  </div>
+  <div class="seg">
+    <button data-tab="count" class="on" data-t="tabCount"></button>
+    <button data-tab="items" data-t="tabItems"></button>
+    <button data-tab="hist" data-t="tabHist"></button>
+  </div>
+</div><div class="cols" id="colsBar"><div data-t="colName"></div><div data-t="colStart"></div><div data-t="colLeft"></div></div><div style="height:6px"></div></header>
+
+<main>
+  <section id="tab-count">
+    <div class="hint">
+      <span><i class="dot" style="background:var(--fixed);border:1px solid var(--line)"></i><span data-t="hintFixed"></span></span>
+      <span><i class="dot" style="background:var(--warn-soft);border:1px solid var(--warn-line)"></i><span data-t="hintNeed"></span></span>
+    </div>
+    <div id="countList"></div>
+    <button class="btn plain block" id="clearBtn" style="margin-top:4px" data-t="clear"></button>
+  </section>
+
+  <section id="tab-result" class="hide">
+    <div class="hero"><small id="resDate"></small><div class="big num" id="resTotal">0</div><small data-t="heroLbl"></small></div>
+    <div class="card"><div class="card-hd"><b data-t="perGroup"></b><span data-t="mustHave"></span></div><div id="resGroups"></div></div>
+    <div class="card" id="resSheetCard">
+      <div class="card-hd"><b data-t="sheetTitle"></b><span data-t="sheetSub"></span></div>
+      <div class="chips" id="resSheet"></div>
+      <details class="more"><summary data-t="seeItems"></summary><table class="detail" id="resSheetItems"></table></details>
+    </div>
+    <div class="card" id="resBetelCard"><div class="card-hd"><b data-t="betelTitle"></b></div><div class="chips" id="resBetel"></div></div>
+    <div class="btns">
+      <button class="btn block" id="saveBtn" data-t="save"></button>
+      <div class="btns2"><button class="btn soft" id="backBtn" data-t="back"></button><button class="btn soft" id="copyRes" data-t="copyLine"></button></div>
+    </div>
+  </section>
+
+  <section id="tab-items" class="hide">
+    <div class="card">
+      <div class="card-hd"><b data-t="addTitle"></b></div>
+      <div class="add">
+        <div class="g2"><label class="fld"><span data-t="fName"></span><input id="newName" data-tp="phName"></label><label class="fld"><span data-t="fPrice"></span><input id="newPrice" type="number" inputmode="numeric"></label></div>
+        <div class="g2"><label class="fld"><span data-t="fGroup"></span><input id="newGroup" list="groupNames" data-tp="phGroup"></label><label class="fld"><span data-t="fFixed"></span><input id="newFixed" type="number" inputmode="numeric" data-tp="phFixed"></label></div>
+        <datalist id="groupNames"></datalist>
+        <button class="btn block" id="addBtn" data-t="addBtn"></button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 4px 8px">
+      <span style="font-size:13px;color:var(--mute)" data-t="activeHint"></span>
+      <span style="display:flex;gap:6px"><button class="btn soft sm" id="allOn" data-t="allOn"></button><button class="btn soft sm" id="allOff" data-t="allOff"></button></span>
+    </div>
+    <div id="itemList"></div>
+  </section>
+
+  <section id="tab-hist" class="hide">
+    <div id="histList"></div>
+    <div class="btns2" style="margin-top:8px"><button class="btn plain sm" id="exportBtn" data-t="backup"></button><button class="btn plain sm" id="importBtn" data-t="restore"></button></div>
+  </section>
+</main>
+
+<div class="bar" id="bar"><div class="bar-in">
+  <div class="prog"><div class="prog-t" id="progT"></div><div class="prog-b"><i id="progB" style="width:0"></i></div></div>
+  <button class="btn" id="calcBtn" data-t="calc"></button>
+</div></div>
+
+<div class="modal" id="modal"><div class="sheet">
+  <h4 id="mTitle"></h4><p id="mText"></p><textarea id="mArea" class="hide"></textarea>
+  <div class="btns2" id="mBtns"><button class="btn plain" id="mCancel" data-t="close"></button><button class="btn" id="mOk">OK</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Ngôn ngữ / 語言 ================= */
+const I18N={
+vi:{
+  title:"Kết toán tủ nước",tabCount:"Nhập số",tabItems:"Danh mục",tabHist:"Lịch sử",
+  colName:"Món",colStart:"Tổng",colLeft:"Còn lại",hintFixed:"Tổng cố định, tự điền",hintNeed:"Cần nhập tổng hôm nay",
+  clear:"Xoá số đã nhập",heroLbl:"Tổng tiền nước phải có",perGroup:"Tiền từng ngăn",mustHave:"phải có",
+  sheetTitle:"Ghi vào 飲料單",sheetSub:"tổng / còn lại",seeItems:"Xem từng món",betelTitle:"Ghi vào bảng 檳榔",
+  save:"Lưu & làm mới cho ca sau",back:"Sửa lại số",copyLine:"Copy gửi LINE",
+  addTitle:"Thêm món",fName:"Tên món",fPrice:"Giá (元)",fGroup:"Ngăn khay",fFixed:"Tổng cố định",
+  phName:"vd: 麥茶",phGroup:"vd: 25元",phFixed:"để trống nếu đổi theo ngày",addBtn:"Thêm món",
+  activeHint:"Bật = hôm nay có món này",allOn:"Bật hết",allOff:"Tắt hết",backup:"Sao lưu",restore:"Khôi phục",
+  calc:"Kết toán",close:"Đóng",
+  progress:(d,n)=>`Đã đếm <b>${d}/${n}</b> món`,noPrice:"Chưa có giá",negRow:"Còn > tổng, kiểm tra lại",
+  sold:s=>`bán ${s}`,whole:"Cả ngăn",items:n=>`${n} món`,modeEach:"Từng món",modeMerge:"Gộp",
+  emptyCount:"Chưa bật món nào.<br>Vào tab <b>Danh mục</b> để chọn món hôm nay có.",
+  clearQ:"Xoá số đã nhập?",clearX:"Các ô Tổng và Còn lại trở về trống.",cleared:"Đã xoá",
+  mergedSfx:" (gộp)",soldUnit:(s,b)=>`bán ${s} ${b?"bao":"chai"}`,
+  thItem:"Món",thStart:"Tổng",thLeft:"Còn",thSold:"Bán",
+  txtHead:"Kết toán",txtTotal:"Tổng",txtSheet:"飲料單 (tổng/còn)",
+  noItemsQ:"Chưa có món nào",noItemsX:"Vào Danh mục bật các món hôm nay có.",
+  negQ:"Có số bị âm",negX:x=>`Còn lại nhiều hơn tổng ở: ${x}.`,
+  missQ:n=>`Còn ${n} món chưa nhập đủ`,missX:x=>`${x}. Ô trống sẽ tính là 0.`,goAnyway:"Vẫn kết toán",
+  saveQ:"Lưu & làm mới?",saveX:"Kết quả được lưu vào Lịch sử. Ô nhập trở về trống, món cố định tự về tổng cố định.",saveOk:"Lưu",saved:"Đã lưu",
+  noPriceL:"chưa có giá",fixedTag:n=>`cố định ${n}`,varTag:"đổi theo ngày",done:"Xong",edit:"Sửa",
+  fNameShort:"Tên",phFixed2:"trống = đổi theo ngày",delItem:"Xoá món này",delQ:n=>`Xoá “${n}”?`,delX:"Lịch sử cũ vẫn giữ nguyên.",del:"Xoá",added:n=>`Đã thêm ${n}`,
+  histEmpty:"Chưa có lần kết toán nào.",betelLC:"檳榔 còn/現金",copy:"Copy",
+  copied:"Đã copy",copyManual:"Copy thủ công",restoreQ:"Dán bản sao lưu vào đây",restored:"Đã khôi phục",err:"Lỗi",badBackup:"Bản sao lưu không đúng định dạng.",
+  sLocal:"Lưu trên máy",sSaving:"Đang lưu…",sSaved:"Đã lưu",sSynced:"Đã đồng bộ",sLoading:"Đang tải",
+  langBtn:"中文",
+},
+zh:{
+  title:"飲料櫃結算",tabCount:"輸入",tabItems:"品項",tabHist:"紀錄",
+  colName:"品項",colStart:"總數",colLeft:"剩餘",hintFixed:"固定總數，自動帶入",hintNeed:"需輸入今日總數",
+  clear:"清除已輸入",heroLbl:"飲料應收總額",perGroup:"各錢格應有金額",mustHave:"應有",
+  sheetTitle:"填寫飲料單",sheetSub:"總數 / 剩餘",seeItems:"查看各品項",betelTitle:"填寫檳榔表",
+  save:"儲存並清空（換下一班）",back:"返回修改",copyLine:"複製傳 LINE",
+  addTitle:"新增品項",fName:"品名",fPrice:"價格（元）",fGroup:"錢格",fFixed:"固定總數",
+  phName:"例：麥茶",phGroup:"例：25元",phFixed:"每日不同請留空",addBtn:"新增品項",
+  activeHint:"開啟＝今天有販售",allOn:"全部開啟",allOff:"全部關閉",backup:"備份",restore:"還原",
+  calc:"結算",close:"關閉",
+  progress:(d,n)=>`已點 <b>${d}/${n}</b> 項`,noPrice:"尚未設定價格",negRow:"剩餘大於總數，請檢查",
+  sold:s=>`售出 ${s}`,whole:"整格合計",items:n=>`${n} 項`,modeEach:"分開",modeMerge:"合併",
+  emptyCount:"尚未開啟任何品項。<br>請到<b>品項</b>頁選擇今天有販售的品項。",
+  clearQ:"清除已輸入的數字？",clearX:"總數與剩餘欄位將全部清空。",cleared:"已清除",
+  mergedSfx:"（合併）",soldUnit:(s,b)=>`售出 ${s} ${b?"包":"瓶"}`,
+  thItem:"品項",thStart:"總數",thLeft:"剩餘",thSold:"售出",
+  txtHead:"結算",txtTotal:"合計",txtSheet:"飲料單（總數/剩餘）",
+  noItemsQ:"沒有品項",noItemsX:"請到品項頁開啟今天有販售的品項。",
+  negQ:"出現負數",negX:x=>`以下品項剩餘大於總數：${x}。`,
+  missQ:n=>`還有 ${n} 項未輸入完整`,missX:x=>`${x}。空白欄位以 0 計算。`,goAnyway:"仍要結算",
+  saveQ:"儲存並清空？",saveX:"結果會存入紀錄，輸入欄位清空，固定品項自動回到固定總數。",saveOk:"儲存",saved:"已儲存",
+  noPriceL:"未設價格",fixedTag:n=>`固定 ${n}`,varTag:"每日不同",done:"完成",edit:"編輯",
+  fNameShort:"名稱",phFixed2:"空白＝每日不同",delItem:"刪除此品項",delQ:n=>`刪除「${n}」？`,delX:"過去的紀錄不受影響。",del:"刪除",added:n=>`已新增 ${n}`,
+  histEmpty:"尚無結算紀錄。",betelLC:"檳榔 剩餘/現金",copy:"複製",
+  copied:"已複製",copyManual:"請手動複製",restoreQ:"請貼上備份內容",restored:"已還原",err:"錯誤",badBackup:"備份格式不正確。",
+  sLocal:"存在本機",sSaving:"儲存中…",sSaved:"已儲存",sSynced:"已同步",sLoading:"載入中",
+  langBtn:"Tiếng Việt",
+}};
+function lang(){try{return localStorage.getItem("ketoan_lang")||(S&&S.lang)||"vi"}catch(e){return (S&&S.lang)||"vi"}}
+function t(k,...a){const v=(I18N[lang()]||I18N.vi)[k];return typeof v==="function"?v(...a):(v??k)}
+function applyStatic(){
+  document.documentElement.lang=lang()==="zh"?"zh-Hant-TW":"vi";
+  document.title=t("title");
+  document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));
+  document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp));
+  $("langBtn").textContent=t("langBtn");
+  setSync(syncKey,syncOk);
+}
+
+/* ================= Dữ liệu ================= */
+const SEED=[
+  ["韋恩咖啡 特濃",30,"咖啡",48],["蠻牛",30,"蠻牛 + 焙茶",24],["焙茶",30,"蠻牛 + 焙茶",24],
+  ["舞茶道 有糖",30,"舞茶道",0],["舞茶道 無糖",30,"舞茶道",0],["冬瓜茶",30,"舞茶道",0],
+  ["麥茶",25,"25元",24],["UCC BLACK",25,"25元",24],
+  ["奶茶",40,"奶茶",0],["檳榔",50,"檳榔",0]
+];
+const BETEL="檳榔";
+let S=null, db=null, ref=null, saveTimer=null, lastRes=null, openEdit=null, syncKey="sLoading", syncOk=false;
+const $=id=>document.getElementById(id);
+const fmt=n=>(Math.round(n)).toLocaleString("en-US");
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const num=v=>{const n=parseInt(v,10);return isNaN(n)?0:n};
+const isBlank=v=>v===undefined||v===null||v==="";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function fresh(){return {items:SEED.map(([n,p,g,f])=>({id:uid(),name:n,price:p,group:g,fixed:f,active:true})),start:{},left:{},merged:{},history:[],v:5}}
+function norm(s){
+  if(!s||!Array.isArray(s.items))return fresh();
+  for(const k of ["start","left","merged"]) if(!s[k]||typeof s[k]!=="object") s[k]={};
+  if(!Array.isArray(s.history)) s.history=[];
+  if(!s.v||s.v<5){
+    const seed=Object.fromEntries(SEED.map(r=>[r[0],r]));
+    for(const it of s.items){
+      if(it.name==="冬瓜") it.name="冬瓜茶";
+      const r=seed[it.name];
+      if(r){ if(!it.group||it.group===it.name) it.group=r[2]; if(!it.price) it.price=r[1]; if(it.fixed===undefined) it.fixed=r[3]; }
+    }
+    if(!s.items.some(it=>it.name===BETEL)) s.items.push({id:uid(),name:BETEL,price:50,group:BETEL,fixed:0,active:true});
+    for(const k of ["added","gcash","cash","float","showAdd"]) delete s[k];
+    s.v=5;
+  }
+  for(const it of s.items){ if(!it.group) it.group=it.name; it.fixed=num(it.fixed); }
+  return s;
+}
+function lsGet(){try{return JSON.parse(localStorage.getItem("ketoan_state")||"null")}catch(e){return null}}
+function lsSet(){try{localStorage.setItem("ketoan_state",JSON.stringify(S))}catch(e){}}
+function setSync(k,ok){syncKey=k;syncOk=!!ok;const e=$("sync");e.querySelector("span").textContent=t(k);e.classList.toggle("ok",syncOk)}
+function persist(){
+  lsSet();
+  if(!ref){setSync("sLocal",false);return}
+  clearTimeout(saveTimer);setSync("sSaving",false);
+  saveTimer=setTimeout(async()=>{
+    try{await ref.set({json:JSON.stringify(S),at:Date.now()});setSync("sSaved",true)}
+    catch(e){setSync("sLocal",false)}
+  },600);
+}
+function toast(x){const e=$("toast");e.textContent=x;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),1600)}
+
+const active=()=>S.items.filter(i=>i.active);
+const startOf=it=>isBlank(S.start[it.id])?num(it.fixed):num(S.start[it.id]);
+const soldOf=it=>startOf(it)-num(S.left[it.id]);
+const isBetel=it=>it.group===BETEL||it.name===BETEL;
+const isDone=it=>!isBlank(S.left[it.id])&&(it.fixed||!isBlank(S.start[it.id]));
+const canMerge=its=>its.length>=2&&its.every(i=>i.price===its[0].price);
+function unitsOf(g,its){
+  if(!(S.merged[g]&&canMerge(its))) return its;
+  return [{id:"g:"+g,name:t("whole"),label:its.map(i=>i.name).join(" + "),price:its[0].price,
+    fixed:its.every(i=>i.fixed)?its.reduce((s,i)=>s+i.fixed,0):0,group:g,merged:true,members:its.length}];
+}
+function allUnits(){const u=[];for(const [g,its] of groupsOf(active())) u.push(...unitsOf(g,its));return u}
+function groupsOf(list){const m=new Map();for(const it of list){if(!m.has(it.group))m.set(it.group,[]);m.get(it.group).push(it)}return m}
+
+/* ================= Nhập số ================= */
+function updateRow(it){
+  const el=$("r-"+it.id);if(!el)return;
+  const s=soldOf(it), filled=!isBlank(S.left[it.id]);
+  el.classList.toggle("done",isDone(it)&&s>=0);
+  el.classList.toggle("err",s<0&&filled);
+  const sm=el.querySelector(".it-nm small");
+  if(!it.price){sm.className="np";sm.textContent=t("noPrice")}
+  else if(s<0&&filled){sm.className="err";sm.textContent=t("negRow")}
+  else{const base=it.merged?`${it.label} · ${it.price}元`:`${it.price}元`;sm.className="";sm.textContent=filled?`${base} · ${t("sold",s)}`:base}
+  el.querySelector('input[data-k="start"]').classList.toggle("need",!it.fixed&&isBlank(S.start[it.id]));
+  updateGroup(it.group);updateProgress();
+}
+function updateGroup(g){
+  const box=document.getElementById("grp-"+g);if(!box)return;
+  const us=allUnits().filter(u=>u.group===g);
+  const done=us.every(isDone)&&us.every(u=>soldOf(u)>=0);
+  const money=us.filter(isDone).reduce((s,u)=>s+soldOf(u)*u.price,0);
+  const gs=box.querySelector(".gs");
+  gs.textContent=us.some(isDone)?(done?"✓ ":"")+fmt(money)+"元":"";
+  gs.classList.toggle("ok",done);box.classList.toggle("done",done);
+}
+function updateProgress(){
+  const a=allUnits(),d=a.filter(isDone).length;
+  $("progT").innerHTML=t("progress",d,a.length);
+  $("progB").style.width=a.length?(d/a.length*100)+"%":"0";
+}
+function row(it){
+  const r=document.createElement("div");r.className="it";r.id="r-"+it.id;
+  r.innerHTML=`<div class="it-nm"><b>${esc(it.name)}</b><small></small></div>
+    <input class="n ${it.fixed?"fixed":""}" type="number" inputmode="numeric" min="0" enterkeyhint="next" data-k="start" ${it.fixed?`placeholder="${it.fixed}"`:""}>
+    <div class="stp"><button data-d="-1" aria-label="-">−</button><input class="n" type="number" inputmode="numeric" min="0" enterkeyhint="next" data-k="left"><button data-d="1" aria-label="+">+</button></div>`;
+  r.querySelectorAll("input").forEach(inp=>{
+    const k=inp.dataset.k;inp.value=S[k][it.id]??"";
+    inp.addEventListener("focus",()=>setTimeout(()=>inp.select(),0));
+    inp.addEventListener("input",()=>{S[k][it.id]=inp.value===""?"":Math.max(0,num(inp.value));updateRow(it);persist()});
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();focusNext(inp)}});
+  });
+  r.querySelectorAll("button[data-d]").forEach(b=>b.addEventListener("click",()=>{
+    const inp=r.querySelector('input[data-k="left"]');
+    const v=Math.max(0,(isBlank(inp.value)?startOf(it):num(inp.value))+num(b.dataset.d));
+    inp.value=v;S.left[it.id]=v;updateRow(it);persist();
+  }));
+  return r;
+}
+function focusNext(cur){
+  const all=[...document.querySelectorAll("#countList input.n")].filter(i=>!i.classList.contains("fixed"));
+  const i=all.indexOf(cur);if(i>=0&&all[i+1])all[i+1].focus();else cur.blur();
+}
+function renderCount(){
+  const L=$("countList");L.innerHTML="";
+  const G=groupsOf(active());
+  if(!G.size) L.innerHTML=`<div class="card"><div class="empty">${t("emptyCount")}</div></div>`;
+  for(const [g,its] of G){
+    const box=document.createElement("div");box.className="grp";
+    const can=canMerge(its),m=!!S.merged[g]&&can;
+    box.id="grp-"+g;box.innerHTML=`<div class="grp-hd"><div><b>${esc(g)}</b><span class="gs"></span></div>${can?`<div class="mini"><button data-m="0" class="${m?"":"on"}">${t("modeEach")}</button><button data-m="1" class="${m?"on":""}">${t("modeMerge")}</button></div>`:`<span>${t("items",its.length)}</span>`}</div>`;
+    box.querySelectorAll(".mini button").forEach(b=>b.addEventListener("click",()=>{S.merged[g]=b.dataset.m==="1";persist();renderCount()}));
+    const us=unitsOf(g,its);
+    for(const it of us) box.appendChild(row(it));
+    L.appendChild(box);
+    for(const it of us) updateRow(it);
+  }
+  updateProgress();
+}
+$("clearBtn").onclick=()=>ask(t("clearQ"),t("clearX"),()=>{S.start={};S.left={};persist();renderCount();toast(t("cleared"))});
+
+/* ================= Kết toán ================= */
+function compute(){
+  const a=allUnits(),groups=[];let total=0;
+  for(const [g,its] of groupsOf(a)){
+    const sold=its.reduce((s,it)=>s+soldOf(it),0),money=its.reduce((s,it)=>s+soldOf(it)*it.price,0);
+    groups.push({group:g,sold,money,betel:its.some(isBetel)});total+=money;
+  }
+  const nm=it=>it.merged?it.group+t("mergedSfx"):it.name;
+  const varDrinks=a.filter(it=>!it.fixed&&!isBetel(it)).map(it=>({name:nm(it),price:it.price,start:startOf(it),left:num(S.left[it.id])}));
+  const bp=new Map();
+  for(const r of varDrinks){const p=bp.get(r.price)||{price:r.price,start:0,left:0};p.start+=r.start;p.left+=r.left;bp.set(r.price,p)}
+  const betel=a.filter(isBetel).map(it=>({name:it.name,price:it.price,start:startOf(it),left:num(S.left[it.id]),sold:soldOf(it),money:soldOf(it)*it.price}));
+  const now=new Date();
+  return {date:now.toLocaleDateString("zh-TW")+" "+now.toTimeString().slice(0,5),groups,total,varDrinks,byPrice:[...bp.values()].sort((x,y)=>x.price-y.price),betel,
+    rows:a.map(it=>({name:nm(it),price:it.price,group:it.group,start:startOf(it),left:num(S.left[it.id]),sold:soldOf(it)}))};
+}
+function renderResult(r){
+  $("resDate").textContent=r.date;$("resTotal").textContent=fmt(r.total);
+  $("resGroups").innerHTML=r.groups.map(g=>`<div class="ln"><div class="l"><b>${esc(g.group)}</b><small>${t("soldUnit",g.sold,g.betel)}</small></div><div class="r num">${fmt(g.money)}</div></div>`).join("");
+  $("resSheetCard").classList.toggle("hide",!r.varDrinks.length);
+  $("resSheet").innerHTML=r.byPrice.map(p=>`<div class="chip"><small>${p.price}元</small><b class="num">${p.start}/${p.left}</b></div>`).join("");
+  $("resSheetItems").innerHTML=`<tr><th>${t("thItem")}</th><th>${t("thStart")}</th><th>${t("thLeft")}</th><th>${t("thSold")}</th></tr>`+r.varDrinks.map(v=>`<tr><td>${esc(v.name)}</td><td>${v.start}</td><td>${v.left}</td><td>${v.start-v.left}</td></tr>`).join("");
+  $("resBetelCard").classList.toggle("hide",!r.betel.length);
+  $("resBetel").innerHTML=r.betel.map(x=>`<div class="chip"><small>結餘包數</small><b class="num">${x.left}</b></div><div class="chip"><small>檳榔現金</small><b class="num">${fmt(x.money)}</b></div>`).join("");
+}
+function resultText(r){
+  let x=`${t("txtHead")} ${r.date}\n`;
+  for(const g of r.groups) x+=`${g.group}: ${g.money}\n`;
+  x+=`${t("txtTotal")}: ${r.total}\n`;
+  if(r.byPrice&&r.byPrice.length){x+=`\n${t("txtSheet")}:\n`;for(const p of r.byPrice) x+=`${p.price}元: ${p.start}/${p.left}\n`}
+  for(const b of (r.betel||[])) x+=`\n檳榔: 結餘 ${b.left} 包, 現金 ${b.money}\n`;
+  return x.trim();
+}
+let curTab="count";
+function showTab(name){
+  curTab=name;
+  document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x.dataset.tab===name||(name==="result"&&x.dataset.tab==="count")));
+  for(const k of ["count","items","hist","result"]) $("tab-"+k).classList.toggle("hide",k!==name);
+  $("bar").classList.toggle("hide",name!=="count");
+  $("colsBar").classList.toggle("hide",name!=="count");
+  window.scrollTo(0,0);
+}
+$("calcBtn").addEventListener("click",()=>{
+  const a=allUnits();
+  const neg=a.filter(it=>soldOf(it)<0&&!isBlank(S.left[it.id]));
+  const miss=a.filter(it=>!isDone(it));
+  const go=()=>{lastRes=compute();renderResult(lastRes);showTab("result")};
+  if(!a.length) return ask(t("noItemsQ"),t("noItemsX"),null);
+  if(neg.length) return ask(t("negQ"),t("negX",neg.map(i=>i.merged?i.group:i.name).join(", ")),null);
+  if(miss.length) return ask(t("missQ",miss.length),t("missX",miss.map(i=>i.merged?i.group:i.name).join(", ")),go,t("goAnyway"));
+  go();
+});
+$("backBtn").onclick=()=>showTab("count");
+$("copyRes").onclick=()=>lastRes&&copy(resultText(lastRes));
+$("saveBtn").onclick=()=>ask(t("saveQ"),t("saveX"),()=>{
+  S.history.push(lastRes);if(S.history.length>200)S.history=S.history.slice(-200);
+  S.start={};S.left={};persist();renderCount();renderHist();showTab("count");toast(t("saved"));
+},t("saveOk"));
+
+/* ================= Danh mục ================= */
+function renderItems(){
+  const L=$("itemList");L.innerHTML="";
+  $("groupNames").innerHTML=[...groupsOf(S.items).keys()].map(g=>`<option value="${esc(g)}">`).join("");
+  for(const [g,its] of groupsOf(S.items)){
+    const box=document.createElement("div");box.className="grp";
+    box.innerHTML=`<div class="grp-hd"><b>${esc(g)}</b><span>${t("items",its.length)}</span></div>`;
+    for(const it of its){
+      const m=document.createElement("div");m.className="mi";
+      const open=openEdit===it.id;
+      m.innerHTML=`<div class="mi-row ${it.active?"":"off"}">
+          <span class="toggle"><input type="checkbox" ${it.active?"checked":""}><i></i></span>
+          <div class="t"><b>${esc(it.name)}</b><small>${it.price?it.price+"元":t("noPriceL")}${it.fixed?`<span class="tag">${t("fixedTag",it.fixed)}</span>`:`<span class="tag v">${t("varTag")}</span>`}</small></div>
+          <button class="edit-btn">${open?t("done"):t("edit")}</button></div>
+        ${open?`<div class="mi-ed">
+          <div class="g2"><label class="fld">${t("fNameShort")}<input data-f="name"></label><label class="fld">${t("fPrice")}<input data-f="price" type="number" inputmode="numeric"></label></div>
+          <div class="g2"><label class="fld">${t("fGroup")}<input data-f="group" list="groupNames"></label><label class="fld">${t("fFixed")}<input data-f="fixed" type="number" inputmode="numeric" placeholder="${t("phFixed2")}"></label></div>
+          <button class="del">${t("delItem")}</button></div>`:""}`;
+      m.querySelector(".toggle input").addEventListener("change",e=>{it.active=e.target.checked;persist();m.querySelector(".mi-row").classList.toggle("off",!it.active)});
+      m.querySelector(".edit-btn").addEventListener("click",()=>{openEdit=open?null:it.id;renderItems()});
+      if(open){
+        m.querySelectorAll("[data-f]").forEach(inp=>{
+          const f=inp.dataset.f;inp.value=f==="price"||f==="fixed"?(it[f]||""):it[f];
+          inp.addEventListener("change",()=>{
+            if(f==="price"||f==="fixed") it[f]=Math.max(0,num(inp.value));
+            else it[f]=inp.value.trim()||(f==="group"?it.name:it[f]);
+            persist();if(f==="group")renderItems();
+          });
+        });
+        m.querySelector(".del").addEventListener("click",()=>ask(t("delQ",it.name),t("delX"),()=>{
+          S.items=S.items.filter(x=>x!==it);delete S.start[it.id];delete S.left[it.id];openEdit=null;persist();renderItems();
+        },t("del")));
+      }
+      box.appendChild(m);
+    }
+    L.appendChild(box);
+  }
+}
+$("addBtn").addEventListener("click",()=>{
+  const n=$("newName").value.trim();if(!n){$("newName").focus();return}
+  S.items.push({id:uid(),name:n,price:Math.max(0,num($("newPrice").value)),group:$("newGroup").value.trim()||n,fixed:Math.max(0,num($("newFixed").value)),active:true});
+  for(const id of ["newName","newPrice","newGroup","newFixed"]) $(id).value="";
+  persist();renderItems();toast(t("added",n));
+});
+$("allOn").onclick=()=>{S.items.forEach(i=>i.active=true);persist();renderItems()};
+$("allOff").onclick=()=>{S.items.forEach(i=>i.active=false);persist();renderItems()};
+
+/* ================= Lịch sử ================= */
+function renderHist(){
+  const L=$("histList");L.innerHTML="";
+  const H=S.history.filter(h=>h&&Array.isArray(h.groups));
+  if(!H.length){L.innerHTML=`<div class="card"><div class="empty">${t("histEmpty")}</div></div>`;return}
+  const box=document.createElement("div");box.className="card";
+  H.slice().reverse().forEach(h=>{
+    const d=document.createElement("details");d.className="mi";
+    let body=h.groups.map(g=>`<div class="ln"><div class="l">${esc(g.group)}</div><div class="num">${fmt(g.money)}</div></div>`).join("");
+    if((h.byPrice&&h.byPrice.length)||(h.betel&&h.betel.length)) body+=`<div class="chips">${(h.byPrice||[]).map(p=>`<div class="chip"><small>${p.price}元</small><b class="num">${p.start}/${p.left}</b></div>`).join("")}${(h.betel||[]).map(x=>`<div class="chip"><small>${t("betelLC")}</small><b class="num">${x.left} · ${fmt(x.money)}</b></div>`).join("")}</div>`;
+    d.innerHTML=`<summary class="mi-row" style="list-style:none"><div class="t"><b>${esc(h.date)}</b></div><b class="num">${fmt(h.total)}</b></summary>${body}<div style="padding:0 14px 12px"><button class="btn soft sm">${t("copy")}</button></div>`;
+    d.querySelector("button").addEventListener("click",()=>copy(resultText(h)));
+    box.appendChild(d);
+  });
+  L.appendChild(box);
+}
+
+/* ================= Chung ================= */
+async function copy(x){try{await navigator.clipboard.writeText(x);toast(t("copied"))}catch(e){showText(t("copyManual"),x)}}
+function openModal(title,text,okLabel,onOk,area){
+  $("mTitle").textContent=title;$("mText").textContent=text||"";
+  const a=$("mArea");a.classList.toggle("hide",area===undefined);if(area!==undefined)a.value=area;
+  $("mOk").classList.toggle("hide",!onOk);$("mOk").textContent=okLabel||"OK";
+  $("mBtns").style.gridTemplateColumns=onOk?"1fr 1fr":"1fr";
+  $("modal").classList.add("show");
+  $("mOk").onclick=()=>{$("modal").classList.remove("show");onOk&&onOk(a.value)};
+}
+const ask=(ti,x,ok,lbl)=>openModal(ti,x,lbl,ok);
+const showText=(ti,v,ok)=>openModal(ti,"",ok?t("restore"):"",ok,v);
+$("mCancel").onclick=()=>$("modal").classList.remove("show");
+$("modal").addEventListener("click",e=>{if(e.target.id==="modal")$("modal").classList.remove("show")});
+$("exportBtn").onclick=()=>copy(JSON.stringify(S));
+$("importBtn").onclick=()=>showText(t("restoreQ"),"",v=>{
+  try{S=norm(JSON.parse(v));persist();renderAll();toast(t("restored"))}catch(e){ask(t("err"),t("badBackup"),null)}
+});
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+  showTab(b.dataset.tab);
+  if(b.dataset.tab==="count")renderCount();
+  if(b.dataset.tab==="items")renderItems();
+  if(b.dataset.tab==="hist")renderHist();
+}));
+$("langBtn").addEventListener("click",()=>{
+  const nl=lang()==="zh"?"vi":"zh";
+  try{localStorage.setItem("ketoan_lang",nl)}catch(e){}
+  S.lang=nl;persist();
+  applyStatic();renderAll();
+  if(curTab==="result"&&lastRes) renderResult(lastRes);
+});
+
+function renderAll(){renderCount();renderItems();renderHist()}
+S=norm(lsGet());applyStatic();renderAll();setSync("sLocal",false);
+
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const timer=new Promise(r=>setTimeout(()=>r(null),10000));
+    db=await Promise.race([window.claude.use("db"),timer]);
+    if(!db)return;
+    ref=db.doc("app/state");
+    const snap=await ref.get();
+    let data=null;
+    if(snap){ data=typeof snap.data==="function"?snap.data():(snap.data!==undefined?snap.data:snap); }
+    if(data&&data.json){
+      S=norm(JSON.parse(data.json)); lsSet();
+      if(S.lang){try{localStorage.setItem("ketoan_lang",S.lang)}catch(e){}}
+      applyStatic(); renderAll(); setSync("sSynced",true);
+    }
+    else persist();
+  }catch(e){ ref=null; setSync("sLocal",false); }
+})();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
